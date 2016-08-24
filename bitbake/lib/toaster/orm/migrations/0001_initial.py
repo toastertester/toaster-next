@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
             name='BuildArtifact',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('file_name', models.FilePathField()),
+                ('file_name', models.FilePathField(max_length=255)),
                 ('file_size', models.IntegerField()),
                 ('build', models.ForeignKey(to='orm.Build')),
             ],
