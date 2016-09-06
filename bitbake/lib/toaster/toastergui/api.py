@@ -820,8 +820,11 @@ class XhrProject(View):
 
     def delete(self, request, *args, **kwargs):
         try:
-            Project.objects.get(kwargs['project_id']).delete()
+            Project.objects.get(pk=kwargs['project_id']).delete()
         except Project.DoesNotExist:
             return error_response("Project %s does not exist" %
                                   kwargs['project_id'])
-        return JsonResponse({"error": "ok"})
+        return JsonResponse({
+            "error": "ok",
+            "gotoUrl": reverse("all-projects", args=[])
+        })

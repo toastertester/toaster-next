@@ -328,7 +328,23 @@ function projectPageInit(ctx) {
 
   $("#delete-project-confirmed").click(function(e){
     e.preventDefault();
-  
+
+    $.ajax({
+        type: 'DELETE',
+        url: libtoaster.ctx.xhrProjectUrl,
+        headers: { 'X-CSRFToken' : $.cookie('csrftoken')},
+        success: function (data) {
+          if (data.error !== "ok") {
+            console.warn(data.error);
+          } else {
+            window.location.replace(data.gotoUrl);
+          }
+        },
+        error: function (data) {
+          console.warn(data);
+          if (onfail) onfail(data);
+        }
+    });
   });
 
 }
