@@ -303,7 +303,7 @@ function customRecipePageInit(ctx) {
             libtoaster.setNotification("custom-image-recipe-deleted",
                                        msg.html());
 
-            window.location.replace(data.gotoUrl);
+            window.location.replace(data.gotoUrl + "?nocache=true");
           }
         },
         error: function (data) {

@@ -221,7 +221,7 @@ class XhrLayer(View):
 
         return JsonResponse({
             "error": "ok",
-            "gotoUrl": reverse('project', args=(kwargs['pid'],))
+            "gotoUrl": reverse('projectlayers', args=(kwargs['pid'],))
         })
 
 
