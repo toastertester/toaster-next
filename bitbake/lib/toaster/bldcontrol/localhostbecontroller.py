@@ -198,8 +198,6 @@ class LocalhostBEController(BuildEnvironmentController):
                 if name != "bitbake":
                     layerlist.append(localdirpath.rstrip("/"))
 
-        logger.debug("localhostbecontroller: current layer list %s " % pformat(layerlist))
-
         # 5. create custom layer and add custom recipes to it
         layerpath = os.path.join(self.be.builddir,
                                  CustomImageRecipe.LAYER_NAME)
@@ -222,19 +220,35 @@ class LocalhostBEController(BuildEnvironmentController):
                 with open(config, "w") as conf:
                     conf.write('BBPATH .= ":${LAYERDIR}"\nBBFILES += "${LAYERDIR}/recipes/*.bb"\n')
 
+            BRLayer.objects.get_or_create(req=target.req,
+                                          name=layer.name,
+                                          dirpath=layerpath,
+                                          giturl="file://%s" % layerpath)
+
             # Update the Layer_Version dirpath that has our base_recipe in
             # to be able to read the base recipe to then  generate the
             # custom recipe.
+            logger.info(customrecipe.base_recipe.layer_version)
+
             br_layer_base_recipe = layers.get(
                 layer_version=customrecipe.base_recipe.layer_version)
 
-            br_layer_base_dirpath = \
-                    os.path.join(self.be.sourcedir,
-                                 self.getGitCloneDirectory(
-                                     br_layer_base_recipe.giturl,
-                                     br_layer_base_recipe.commit),
-                                 customrecipe.base_recipe.layer_version.dirpath
-                                )
+            # If the layer is one that we've cloned we know where it lives
+            if br_layer_base_recipe.giturl and br_layer_base_recipe.commit:
+                layer_path = self.getGitCloneDirectory(
+                    br_layer_base_recipe.giturl,
+                    br_layer_base_recipe.commit)
+            # Otherwise it's a local layer
+            elif br_layer_base_recipe.local_source_dir:
+                layer_path = br_layer_base_recipe.local_source_dir
+            else:
+                logger.error("Unable to workout the dir path for the custom"
+                             " image recipe")
+
+            br_layer_base_dirpath = os.path.join(
+                self.be.sourcedir,
+                layer_path,
+                customrecipe.base_recipe.layer_version.dirpath)
 
             customrecipe.base_recipe.layer_version.dirpath = \
                          br_layer_base_dirpath
@@ -249,21 +263,25 @@ class LocalhostBEController(BuildEnvironmentController):
 
             # Update the layer and recipe objects
             customrecipe.layer_version.dirpath = layerpath
+            customrecipe.layer_version.layer.local_source_dir = layerpath
+            customrecipe.layer_version.layer.save()
             customrecipe.layer_version.save()
 
             customrecipe.file_path = recipe_path
             customrecipe.save()
 
             # create *Layer* objects needed for build machinery to work
-            BRLayer.objects.get_or_create(req=target.req,
-                                          name=layer.name,
-                                          dirpath=layerpath,
-                                          giturl="file://%s" % layerpath)
+
+
+            nongitlayerlist.append(layerpath)
+
         if os.path.isdir(layerpath):
             layerlist.append(layerpath)
 
         self.islayerset = True
         layerlist.extend(nongitlayerlist)
+
+        logger.debug("localhostbecontroller: current layer list %s " % pformat(layerlist))
         return layerlist
 
     def readServerLogFile(self):
