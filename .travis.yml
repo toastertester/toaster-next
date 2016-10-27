@@ -1,0 +1,75 @@
+language: python
+python: "3.5"
+
+sudo: required # We don't actually need sudo but this forces the selection of the trusty beta image
+dist: trusty # We have to use trusty for the newer glibc that is needed by geckodriver
+
+addons:
+  firefox: "49.0"
+
+cache: pip
+
+git:
+  depth: 3
+
+env:
+  global:
+    - DISPLAY=:99.0
+    - PATH=$PATH:$HOME/bin/
+  matrix:
+    - TARGET=firefox
+    - TARGET=nonbrowser
+    - TARGET=chrome
+
+matrix:
+  allow_failures:
+    - env: TARGET=chrome # Chrome appears unstable on travis
+
+install:
+  - virtualenv --python=python3 $HOME/virtualenv/
+  - virtualenv --python=python2 $HOME/virtualenv/
+  - source $HOME/virtualenv/bin/activate
+  - pip3 install -r ./bitbake/toaster-requirements.txt
+  - pip3 install -r ./bitbake/lib/toaster/tests/toaster-tests-requirements.txt
+  - pip3 install flake8
+  - mkdir $HOME/bin/
+
+before_script:
+  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
+  - sleep 3 # give xvfb some time to start
+  - set -e # make sure we exit if one command fails
+
+script:
+  - |
+    if [ $TARGET == "firefox" ]; then
+      wget https://github.com/mozilla/geckodriver/releases/download/v0.11.1/geckodriver-v0.11.1-linux64.tar.gz
+      tar -xf geckodriver-v0.11.1-linux64.tar.gz
+      mv ./geckodriver $HOME/bin/
+      chmod +x $HOME/bin/geckodriver
+      TOASTER_TESTS_BROWSER=marionette ./bitbake/lib/toaster/manage.py test -v3 tests.browser --failfast
+    fi
+
+  - |
+    if [ $TARGET == "chrome" ]; then
+      # https://github.com/SeleniumHQ/docker-selenium/issues/87 :
+      export DBUS_SESSION_BUS_ADDRESS=/dev/null
+      sudo apt-get -y purge chromium-browser
+      wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+      sudo dpkg -i google-chrome*.deb
+      sleep 3
+      google-chrome &
+      export CHROMEDRIVER_VERSION=`curl -s http://chromedriver.storage.googleapis.com/LATEST_RELEASE`
+      curl -L -O "http://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+      unzip chromedriver_linux64.zip && chmod +x chromedriver && sudo mv chromedriver /usr/local/bin
+      TOASTER_TESTS_BROWSER=chrome ./bitbake/lib/toaster/manage.py test -v3 tests.browser --failfast
+    fi
+
+  - |
+    if [ $TARGET == "nonbrowser" ]; then
+      git clone https://github.com/toastertester/toaster-eventreplay-files.git  /tmp/toaster-eventreplay-files/
+      EVENTREPLAY_DIR=/tmp/toaster-eventreplay-files/ DJANGO_SETTINGS_MODULE=toastermain.settings_test ./bitbake/lib/toaster/manage.py test -v2 tests.eventreplay
+      ./bitbake/lib/toaster/manage.py test toastergui
+      echo "-------------------------------------------"
+      echo "flake8"
+      flake8 ./bitbake/lib/toaster/ --select F --exit-zero # We have too many errors at the moment
+    fi
