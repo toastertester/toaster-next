@@ -33,6 +33,8 @@ import subprocess
 from toastermain import settings
 
 from bldcontrol.bbcontroller import BuildEnvironmentController, ShellCmdException, BuildSetupException, BitbakeController
+import bb.event
+import time  #####
 
 import logging
 logger = logging.getLogger("toaster")
@@ -84,6 +86,11 @@ class LocalhostBEController(BuildEnvironmentController):
         #logger.debug("localhostbecontroller: using HEAD checkout in %s" % local_checkout_path)
         return local_checkout_path
 
+
+    def setCloneStatus(self,bitbake,status,total,current):
+        bitbake.req.build.repos_cloned=current
+        bitbake.req.build.repos_to_clone=total
+        bitbake.req.build.save()
 
     def setLayers(self, bitbake, layers, targets):
         """ a word of attention: by convention, the first layer for any build will be poky! """
@@ -147,7 +154,13 @@ class LocalhostBEController(BuildEnvironmentController):
         logger.info("Using pre-checked out source for layer %s", cached_layers)
 
         # 3. checkout the repositories
+        clone_count=0
+        clone_total=len(gitrepos.keys())
+        self.setCloneStatus(bitbake,'Started',clone_total,clone_count)
         for giturl, commit in gitrepos.keys():
+            self.setCloneStatus(bitbake,'progress',clone_total,clone_count)
+            clone_count += 1
+
             localdirname = os.path.join(self.be.sourcedir, self.getGitCloneDirectory(giturl, commit))
             logger.debug("localhostbecontroller: giturl %s:%s checking out in current directory %s" % (giturl, commit, localdirname))
 
@@ -198,6 +211,7 @@ class LocalhostBEController(BuildEnvironmentController):
                 if name != "bitbake":
                     layerlist.append(localdirpath.rstrip("/"))
 
+        self.setCloneStatus(bitbake,'complete',clone_total,clone_count)
         logger.debug("localhostbecontroller: current layer list %s " % pformat(layerlist))
 
         # 5. create custom layer and add custom recipes to it
