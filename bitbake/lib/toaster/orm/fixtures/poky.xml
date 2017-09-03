@@ -96,7 +96,10 @@
   <object model="orm.layer" pk="1">
     <field type="CharField" name="name">openembedded-core</field>
     <field type="CharField" name="layer_index_url"></field>
-    <field type="CharField" name="vcs_url">git://git.yoctoproject.org/poky</field>
+    <field type="CharField" name="vcs_url">git://git.openembedded.org/openembedded-core</field>
+    <field type="CharField" name="vcs_web_url">http://cgit.openembedded.org/openembedded-core</field>
+    <field type="CharField" name="vcs_web_tree_base_url">http://cgit.openembedded.org/openembedded-core/tree/%path%?h=%branch%</field>
+    <field type="CharField" name="vcs_web_file_base_url">http://cgit.openembedded.org/openembedded-core/tree/%path%?h=%branch%</field>
   </object>
   <object model="orm.layer_version" pk="1">
     <field rel="ManyToOneRel" to="orm.layer" name="layer">1</field>
@@ -124,7 +127,10 @@
   <object model="orm.layer" pk="2">
     <field type="CharField" name="name">meta-poky</field>
     <field type="CharField" name="layer_index_url"></field>
-    <field type="CharField" name="vcs_url">git://git.yoctoproject.org/poky</field>
+    <field type="CharField" name="vcs_url">git://git.yoctoproject.org/meta-yocto</field>
+    <field type="CharField" name="vcs_web_url">http://git.yoctoproject.org/cgit/cgit.cgi/meta-yocto</field>
+    <field type="CharField" name="vcs_web_tree_base_url">http://git.yoctoproject.org/cgit/cgit.cgi/meta-yocto/tree/%path%?h=%branch%</field>
+    <field type="CharField" name="vcs_web_file_base_url">http://git.yoctoproject.org/cgit/cgit.cgi/meta-yocto/tree/%path%?h=%branch%</field>
   </object>
   <object model="orm.layer_version" pk="4">
     <field rel="ManyToOneRel" to="orm.layer" name="layer">2</field>
@@ -152,7 +158,10 @@
   <object model="orm.layer" pk="3">
     <field type="CharField" name="name">meta-yocto-bsp</field>
     <field type="CharField" name="layer_index_url"></field>
-    <field type="CharField" name="vcs_url">git://git.yoctoproject.org/poky</field>
+    <field type="CharField" name="vcs_url">git://git.yoctoproject.org/meta-yocto</field>
+    <field type="CharField" name="vcs_web_url">http://git.yoctoproject.org/cgit/cgit.cgi/meta-yocto</field>
+    <field type="CharField" name="vcs_web_tree_base_url">http://git.yoctoproject.org/cgit/cgit.cgi/meta-yocto/tree/%path%?h=%branch%</field>
+    <field type="CharField" name="vcs_web_file_base_url">http://git.yoctoproject.org/cgit/cgit.cgi/meta-yocto/tree/%path%?h=%branch%</field>
   </object>
   <object model="orm.layer_version" pk="7">
     <field rel="ManyToOneRel" to="orm.layer" name="layer">3</field>
